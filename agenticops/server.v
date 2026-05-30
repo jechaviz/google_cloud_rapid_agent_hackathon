@@ -22,6 +22,9 @@ pub fn serve(config ServerConfig) ! {
 
 fn (mut handler Handler) handle(req http.Request) http.Response {
 	path := request_path(req.url)
+	if req.method == .options {
+		return json_response(.no_content, '')
+	}
 	if req.method == .get && path == '/healthz' {
 		return json_response(.ok, '{"status":"ok"}')
 	}
@@ -51,6 +54,9 @@ fn json_response(status http.Status, body string) http.Response {
 	mut header := http.new_header()
 	header.add_custom('Content-Type', 'application/json') or {}
 	header.add_custom('Cache-Control', 'no-store') or {}
+	header.add_custom('Access-Control-Allow-Origin', '*') or {}
+	header.add_custom('Access-Control-Allow-Headers', 'Content-Type, Authorization') or {}
+	header.add_custom('Access-Control-Allow-Methods', 'GET, POST, OPTIONS') or {}
 	return http.Response{
 		header:       header
 		body:         body
