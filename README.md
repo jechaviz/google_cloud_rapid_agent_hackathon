@@ -12,6 +12,12 @@ v run cmd\agent serve --port 8080
 v test .
 ```
 
+## Cloud Run
+
+```powershell
+.\scripts\deploy_cloud_run.ps1 -ProjectId YOUR_PROJECT_ID -Region us-central1
+```
+
 ## Architecture
 
 - `agenticops`: domain, ports, policies, adapters, orchestrator and evaluator.
