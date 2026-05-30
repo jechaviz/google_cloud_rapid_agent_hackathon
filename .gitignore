@@ -1,0 +1,5 @@
+agent.exe
+*.exe
+*.tmp.c
+__pycache__/
+evidence/
