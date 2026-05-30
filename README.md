@@ -18,6 +18,10 @@ v test .
 .\scripts\deploy_cloud_run.ps1 -ProjectId YOUR_PROJECT_ID -Region us-central1
 ```
 
+GitHub Actions deploy is also available through `.github/workflows/deploy-cloud-run.yml`
+with repository secrets `GCP_SA_KEY`, `GCP_PROJECT_ID`, `GEMINI_API_KEY`,
+`DYNATRACE_MCP_TOKEN` and `DYNATRACE_MCP_URL`.
+
 ## Architecture
 
 - `agenticops`: domain, ports, policies, adapters, orchestrator and evaluator.
