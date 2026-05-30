@@ -19,8 +19,15 @@ v test .
 ```
 
 GitHub Actions deploy is also available through `.github/workflows/deploy-cloud-run.yml`
-with repository secrets `GCP_SA_KEY`, `GCP_PROJECT_ID`, `GEMINI_API_KEY`,
-`DYNATRACE_MCP_TOKEN` and `DYNATRACE_MCP_URL`.
+with repository secrets `GCP_SA_KEY` and `GCP_PROJECT_ID`.
+
+Optional runtime secrets can be added as GitHub secrets. The workflow syncs
+configured values into Google Secret Manager before deployment and skips missing
+optional partners:
+
+- `GEMINI_API_KEY`
+- `DYNATRACE_MCP_TOKEN`
+- `DYNATRACE_MCP_URL`
 
 ## Architecture
 

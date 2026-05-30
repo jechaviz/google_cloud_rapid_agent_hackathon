@@ -24,11 +24,61 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
       - uses: google-github-actions/setup-gcloud@v2
-      - name: Deploy
+      - name: Sync runtime secrets
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DYNATRACE_MCP_TOKEN: ${{ secrets.DYNATRACE_MCP_TOKEN }}
+          DYNATRACE_MCP_URL: ${{ secrets.DYNATRACE_MCP_URL }}
         run: |
+          set -euo pipefail
+
+          sync_secret() {
+            local name="$1"
+            local value="${!name:-}"
+            if [ -z "$value" ]; then
+              echo "skip $name: GitHub secret not configured"
+              return
+            fi
+            if gcloud secrets describe "$name" >/dev/null 2>&1; then
+              printf "%s" "$value" | gcloud secrets versions add "$name" --data-file=-
+            else
+              printf "%s" "$value" | gcloud secrets create "$name" --data-file=- --replication-policy=automatic
+            fi
+          }
+
+          sync_secret GEMINI_API_KEY
+          sync_secret DYNATRACE_MCP_TOKEN
+          sync_secret DYNATRACE_MCP_URL
+      - name: Deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          secret_map=""
+          append_secret() {
+            local env_name="$1"
+            local secret_name="$2"
+            if gcloud secrets describe "$secret_name" >/dev/null 2>&1; then
+              if [ -n "$secret_map" ]; then
+                secret_map="$secret_map,"
+              fi
+              secret_map="$secret_map$env_name=$secret_name:latest"
+            else
+              echo "skip $env_name: Secret Manager secret $secret_name not found"
+            fi
+          }
+
+          append_secret GEMINI_API_KEY GEMINI_API_KEY
+          append_secret DYNATRACE_MCP_TOKEN DYNATRACE_MCP_TOKEN
+          append_secret DYNATRACE_MCP_URL DYNATRACE_MCP_URL
+
+          secret_args=()
+          if [ -n "$secret_map" ]; then
+            secret_args=(--set-secrets "$secret_map")
+          fi
+
           gcloud run deploy "${{ inputs.service }}" \
             --source . \
             --region "${{ inputs.region }}" \
             --allow-unauthenticated \
             --set-env-vars "GOOGLE_CLOUD_PROJECT=${{ secrets.GCP_PROJECT_ID }},GOOGLE_CLOUD_LOCATION=${{ inputs.region }},AGENT_ENV=prod" \
-            --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest,DYNATRACE_MCP_TOKEN=DYNATRACE_MCP_TOKEN:latest,DYNATRACE_MCP_URL=DYNATRACE_MCP_URL:latest"
+            "${secret_args[@]}"
